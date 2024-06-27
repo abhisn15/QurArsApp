@@ -78,10 +78,26 @@ class _SplashScreenState extends State<SplashScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
-        child: Image.asset(
-          'assets/splash_screen.png',
-          width: 255,
-          height: 255,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Image.asset(
+              'assets/splash_screen.png',
+              width: 0,
+              height: 0,
+            ),
+            Image.asset(
+              'assets/splash_screen.png',
+              width: 255,
+              height: 255,
+            ),
+            Image.asset(
+              'assets/splash_screen2.png',
+              width: 200,
+              height: 80,
+            ),
+          ],
         ),
       ),
     );
