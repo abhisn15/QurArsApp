@@ -36,6 +36,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.6
   shared_preferences: ^2.2.3
+  video_player: ^2.9.1
 
 dev_dependencies:
   flutter_test:
@@ -63,6 +64,7 @@ flutter:
   assets:
     - assets/splash_screen.png
     - assets/splash_screen2.png
+    - assets/videos/Downloadd.mp4
     - assets/fonts/
 
   # An image asset can refer to one or more resolution-specific "variants", see

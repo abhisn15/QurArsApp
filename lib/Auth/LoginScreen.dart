@@ -1,4 +1,6 @@
+import 'package:QurArsApp/Auth/ForgetPasswordScreen.dart';
 import 'package:QurArsApp/Auth/Registration.dart';
+import 'package:QurArsApp/Users/Dashboard.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
@@ -94,7 +96,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  const ForgetPasswordScreen()));
+                    },
                     child: const Text(
                       'Forgot the password?',
                       style: TextStyle(
@@ -109,7 +117,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 SizedBox(
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      // Navigator.pushAndRemoveUntil(
+                      //     context,
+                      //     MaterialPageRoute(builder: (context) => Dashboard()),
+                      //     (route) => false);
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const Dashboard()));
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.lightBlue,
                       shape: RoundedRectangleBorder(

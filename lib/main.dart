@@ -7,7 +7,8 @@ import 'Users/Dashboard.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
+  // SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   runApp(MyApp());
 }
 
@@ -92,11 +93,20 @@ class _SplashScreenState extends State<SplashScreen> {
               width: 255,
               height: 255,
             ),
-            Image.asset(
-              'assets/splash_screen2.png',
-              width: 200,
-              height: 80,
-            ),
+            Container(
+                child: Column(
+              children: [
+                Text(
+                  'From',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
+                ),
+                Image.asset(
+                  'assets/splash_screen2.png',
+                  width: 160,
+                  height: 70,
+                ),
+              ],
+            )),
           ],
         ),
       ),
