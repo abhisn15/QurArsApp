@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'Auth/LoginScreen.dart';
 import 'Admin/DashboardAdmin.dart';
 import 'Users/Dashboard.dart';
+import 'dart:io' show Platform;
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
