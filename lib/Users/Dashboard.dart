@@ -1,21 +1,23 @@
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
-import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart';
+import 'package:photo_manager/photo_manager.dart';
 import 'package:video_player/video_player.dart';
 
 void main() {
   if (Platform.isAndroid) {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      statusBarColor: Colors.blue, // For Android
+      statusBarColor: Colors.blue,
       statusBarIconBrightness: Brightness.light,
     ));
   } else if (Platform.isIOS) {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      statusBarBrightness: Brightness.dark, // For iOS
+      statusBarBrightness: Brightness.dark,
       statusBarIconBrightness: Brightness.light,
     ));
   }
@@ -29,17 +31,166 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeNotifications();
+  }
+
+  Future<void> _initializeNotifications() async {
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    final DarwinInitializationSettings initializationSettingsIOS =
+        DarwinInitializationSettings();
+
+    final InitializationSettings initializationSettings =
+        InitializationSettings(
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsIOS,
+    );
+
+    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  }
+
+  final DarwinInitializationSettings initializationSettingsIOS =
+      DarwinInitializationSettings(
+    requestAlertPermission: true,
+    requestBadgePermission: true,
+    requestSoundPermission: true,
+  );
+
+  //Permintaan Izin  Pengguna
+  Future<void> requestPermissions(BuildContext context) async {
+    if (Platform.isAndroid) {
+      // Request storage permission
+      PermissionStatus storagePermission = await Permission.storage.request();
+
+      if (storagePermission.isGranted) {
+        print('Storage permission granted');
+      } else if (await Permission.manageExternalStorage.request().isGranted) {
+        print('Manage external storage permission granted');
+      } else {
+        // Show modal dialog if permission is denied
+        await _showPermissionDialog(context, 'Storage Permission');
+      }
+    }
+  }
+
+// Function to show permission dialog
+  Future<void> _showPermissionDialog(
+      BuildContext context, String permissionName) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // User must tap a button
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('$permissionName Required'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('This app needs $permissionName to function properly.'),
+                Text('Please grant $permissionName in your device settings.'),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Open Settings'),
+              onPressed: () {
+                openAppSettings(); // Open app settings for user to enable permission
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Future<void> showDownloadNotification(
+  //     String fileName, String progress) async {
+  //   int progressValue = int.tryParse(progress) ?? 0; // Parsing progress
+
+  //   const AndroidNotificationDetails androidPlatformChannelSpecifics =
+  //       AndroidNotificationDetails(
+  //     'download_channel',
+  //     'Download',
+  //     channelDescription: 'Download notification',
+  //     importance: Importance.low,
+  //     priority: Priority.low,
+  //     showProgress: true,
+  //     maxProgress: 100,
+  //     progress: progressValue, // Use parsed value here
+  //   );
+
+  //   const NotificationDetails platformChannelSpecifics =
+  //       NotificationDetails(android: androidPlatformChannelSpecifics);
+
+  //   await flutterLocalNotificationsPlugin.show(
+  //     0,
+  //     'Downloading $fileName',
+  //     'Download in progress: $progress%',
+  //     platformChannelSpecifics,
+  //   );
+  // }
+
+  Future<void> showDownloadNotification(
+      String fileName, int progressValue) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'download_channel',
+      'Download',
+      channelDescription: 'Download notification',
+      importance: Importance.low,
+      priority: Priority.low,
+      showProgress: true,
+      maxProgress: 100,
+    );
+
+    final NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+
+    await flutterLocalNotificationsPlugin.show(
+      0,
+      'Downloading $fileName',
+      'Download in progress: $progressValue%',
+      platformChannelSpecifics,
+      payload: 'progress_$progressValue',
+    );
+  }
+
+  Future<void> showCompleteNotification(String fileName) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'download_channel',
+      'Download',
+      channelDescription: 'Download notification',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+
+    const NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+
+    await flutterLocalNotificationsPlugin.show(
+      0,
+      'Download Complete',
+      '$fileName has been downloaded successfully',
+      platformChannelSpecifics,
+    );
+  }
+
   final List<Map<String, String>> _mediaUrls = [
-    {
-      'type': 'image',
-      'url':
-          'https://images.unsplash.com/photo-1550348579-959785e820f7?w=1200&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8Z29hdHxlbnwwfHwwfHx8MA%3D%3D'
-    },
-    {
-      'type': 'image',
-      'url':
-          'https://images.unsplash.com/photo-1550348579-959785e820f7?w=1200&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8Z29hdHxlbnwwfHwwfHx8MA%3D%3D'
-    },
     {
       'type': 'image',
       'url':
@@ -73,35 +224,73 @@ class _DashboardState extends State<Dashboard> {
     // Add more media URLs
   ];
 
+  Future<void> downloadFiles(List<Map<String, String>> mediaList) async {
+    try {
+      for (var media in mediaList) {
+        final String url = media['url']!;
+        final String type = media['type']!;
+
+        final response = await http.get(Uri.parse(url));
+
+        if (response.statusCode == 200) {
+          final fileName = Uri.parse(url).pathSegments.last.split('?').first;
+          final directory = await getApplicationDocumentsDirectory();
+          print('Downloading from: $url');
+          final file = File('${directory.path}/$fileName');
+
+          // Show download notification with initial progress
+          await showDownloadNotification(fileName, 0);
+
+          await file.writeAsBytes(response.bodyBytes);
+          print('Downloaded: $fileName');
+          print('Saving file to: ${file.path}');
+
+          if (type == 'image') {
+            // Save image to gallery
+            await PhotoManager.editor
+                .saveImageWithPath(file.path, title: 'qurban_arsip.jpg');
+          } else if (type == 'video') {
+            // Save video to gallery
+            await _saveVideoToGallery(file.path);
+          }
+
+          // Show complete notification
+          await showCompleteNotification(fileName);
+        } else {
+          print('Failed to download $url');
+        }
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
+
+  Future<void> _saveVideoToGallery(String videoPath) async {
+    try {
+      final File videoFile = File(videoPath);
+
+      // Ensure the file exists
+      if (await videoFile.exists()) {
+        // Save video to gallery using PhotoManager
+        final AssetEntity? result =
+            await PhotoManager.editor.saveVideo(videoFile);
+      } else {
+        print("Video file does not exist.");
+      }
+    } catch (e) {
+      print("Error saving video: $e");
+    }
+  }
+
   Future<void> _refresh() async {
     // Add your refresh logic here, for example fetching new data from API
-    await Future.delayed(Duration(seconds: 2)); // Simulate network delay
+    await Future.delayed(const Duration(seconds: 2)); // Simulate network delay
     setState(() {
       // Update your mediaUrls or any state variable
     });
   }
 
-  Future<void> _downloadAllMedia() async {
-    final tempDir = await getTemporaryDirectory();
-
-    for (var media in _mediaUrls) {
-      final url = media['url']!;
-      final response = await http.get(Uri.parse(url));
-      final fileName = basename(url);
-      final filePath = '${tempDir.path}/$fileName';
-
-      final file = File(filePath);
-      await file.writeAsBytes(response.bodyBytes);
-
-      if (media['type'] == 'image') {
-        await ImageGallerySaver.saveFile(file.path);
-      } else if (media['type'] == 'video') {
-        await ImageGallerySaver.saveFile(file.path);
-      }
-    }
-  }
-
-  void _showThankYouNote(BuildContext context) {
+  void _showThankYouNote() {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -160,221 +349,221 @@ class _DashboardState extends State<Dashboard> {
                 children: [
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      ClipOval(
-                        child: Image.network(
-                          'https://images.unsplash.com/photo-1531891437562-4301cf35b7e4?q=80&w=3164&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-                          width: 50,
-                          height: 50,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      SizedBox(width: 20),
                       Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Hello, Muhammad',
-                            style: TextStyle(
-                                color: Color(0xff1f1f1f),
-                                fontSize: 20,
-                                fontWeight: FontWeight.w500),
-                          ),
-                          const Text(
-                            'Monday, 24 July',
-                            style: TextStyle(
-                                color: Color(0xff666666),
-                                fontSize: 12,
-                                fontWeight: FontWeight.normal),
-                          ),
-                        ],
-                      ),
-                      const Spacer(),
-                      Container(
-                        width: 35,
-                        height: 35,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              spreadRadius: 1,
-                              blurRadius: 5,
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: IconButton(
-                            onPressed: () {},
-                            icon: const Icon(
-                              Icons.notifications_none_rounded,
-                              size: 25,
-                              color: Color(0xfffe8550),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Container(
-                    width: double.infinity,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(30),
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color(0xffffdabe),
-                          Color(0xffffcb96),
-                        ],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          spreadRadius: 1,
-                          blurRadius: 5,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 20),
-                      child: Row(
                         children: [
                           ClipOval(
                             child: Image.network(
                               'https://images.unsplash.com/photo-1531891437562-4301cf35b7e4?q=80&w=3164&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-                              width: 80,
-                              height: 80,
+                              width: 50,
+                              height: 50,
                               alignment: Alignment.centerLeft,
                               repeat: ImageRepeat.repeat,
                             ),
                           ),
-                          const SizedBox(width: 20),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Thank you, Muhammad',
-                                style: TextStyle(
-                                  color: Color(0xff1f1f1f),
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 5),
-                              const Text(
-                                'Your sacrifice has been completed.',
-                                style: TextStyle(
-                                  color: Color(0xff1f1f1f),
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const Spacer(),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: const Color(0xfffe8550),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: TextButton(
-                                  onPressed: () => _showThankYouNote(context),
-                                  child: const Text(
-                                    'View Note',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
                         ],
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 20),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(30),
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          spreadRadius: 1,
-                          blurRadius: 5,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Media',
-                          style: TextStyle(
-                            color: Color(0xff1f1f1f),
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        GridView.builder(
-                          shrinkWrap: true,
-                          physics: NeverScrollableScrollPhysics(),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 10,
-                          ),
-                          itemCount: _mediaUrls.length,
-                          itemBuilder: (context, index) {
-                            final media = _mediaUrls[index];
-                            final mediaType = media['type'];
-                            final mediaUrl = media['url'];
-
-                            return GestureDetector(
-                              onTap: () {
-                                // Handle media tap
-                              },
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: mediaType == 'image'
-                                    ? Image.network(
-                                        mediaUrl!,
-                                        fit: BoxFit.cover,
-                                      )
-                                    : VideoPlayerScreen(url: mediaUrl!),
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 20),
-                        Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: const Color(0xfffe8550),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: TextButton(
-                            onPressed: _downloadAllMedia,
-                            child: const Text(
-                              'Download All',
+                      const SizedBox(
+                        width: 10,
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.only(top: 5),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Welcome',
                               style: TextStyle(
+                                  color: Colors.black,
+                                  fontFamily: 'Poppins',
+                                  fontSize: 12),
+                            ),
+                            SizedBox(
+                              height: 5,
+                            ),
+                            SizedBox(
+                              width: 140,
+                              child: Text(
+                                'Alvaro Sekeluarga',
+                                style: TextStyle(
+                                    color: Color.fromRGBO(44, 180, 255, 1),
+                                    fontFamily: 'Poppins',
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(
+                        width: 10,
+                      ),
+                      Container(
+                        margin: const EdgeInsets.only(top: 5),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            SizedBox(
+                              width: 140,
+                              height: 35,
+                              child: ElevatedButton(
+                                onPressed: () async {
+                                  await downloadFiles(_mediaUrls);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content: Text('Download complete')),
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.lightBlue,
+                                  shadowColor: Colors.black38,
+                                  elevation: 4,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.only(
+                                        bottomLeft: Radius.circular(5),
+                                        bottomRight: Radius.circular(30),
+                                        topLeft: Radius.circular(5),
+                                        topRight: Radius.circular(10)),
+                                  ),
+                                ),
+                                child: const Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      'Download All',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontFamily: 'Poppins',
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    )),
+                              ),
+                            ),
+                            const SizedBox(
+                              height: 10,
+                            ),
+                            SizedBox(
+                              width: 140,
+                              height: 35,
+                              child: ElevatedButton(
+                                onPressed: () {},
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  shadowColor: Colors.black38,
+                                  elevation: 4,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.only(
+                                        bottomLeft: Radius.circular(5),
+                                        bottomRight: Radius.circular(30),
+                                        topLeft: Radius.circular(5),
+                                        topRight: Radius.circular(10)),
+                                  ),
+                                ),
+                                child: const Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      'Logout',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontFamily: 'Poppins',
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    )),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: 140,
+                      height: 35,
+                      child: ElevatedButton(
+                        onPressed: _showThankYouNote,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          shadowColor: Colors.black38,
+                          elevation: 4,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.only(
+                                bottomLeft: Radius.circular(5),
+                                bottomRight: Radius.circular(30),
+                                topLeft: Radius.circular(5),
+                                topRight: Radius.circular(10)),
+                          ),
+                        ),
+                        child: const Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Thank-you note',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontFamily: 'Poppins',
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
-                            ),
-                          ),
-                        ),
-                      ],
+                            )),
+                      ),
                     ),
+                  ),
+                  SizedBox(
+                    height: Platform.isIOS ? 20 : 20,
+                  ),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                    ),
+                    itemCount: _mediaUrls.length,
+                    itemBuilder: (context, index) {
+                      return InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => MediaDetailScreen(
+                                  mediaUrl: _mediaUrls[index]),
+                            ),
+                          );
+                        },
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: _mediaUrls[index]['type'] == 'image'
+                              ? Image.network(
+                                  _mediaUrls[index]['url']!,
+                                  fit: BoxFit.cover,
+                                  loadingBuilder: (context, child, progress) {
+                                    if (progress == null) return child;
+                                    return const Center(
+                                        child: CircularProgressIndicator());
+                                  },
+                                )
+                              : Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    SizedBox(
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      child: VideoPlayerWidget(
+                                        videoUrl: _mediaUrls[index]['url']!,
+                                      ),
+                                    ),
+                                    const Icon(Icons.play_circle_outline,
+                                        color: Colors.white, size: 50),
+                                  ],
+                                ),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -386,25 +575,68 @@ class _DashboardState extends State<Dashboard> {
   }
 }
 
-class VideoPlayerScreen extends StatefulWidget {
-  final String url;
+class MediaDetailScreen extends StatelessWidget {
+  final Map<String, String> mediaUrl;
 
-  const VideoPlayerScreen({Key? key, required this.url}) : super(key: key);
+  const MediaDetailScreen({Key? key, required this.mediaUrl}) : super(key: key);
 
   @override
-  _VideoPlayerScreenState createState() => _VideoPlayerScreenState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          Center(
+            child: mediaUrl['type'] == 'image'
+                ? Image.network(mediaUrl['url']!)
+                : VideoPlayerWidget(videoUrl: mediaUrl['url']!),
+          ),
+          Positioned(
+            top: 40,
+            left: 0,
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                style: ButtonStyle(
+                  backgroundColor:
+                      MaterialStateProperty.all(Colors.transparent),
+                  elevation: MaterialStateProperty.all(0),
+                ),
+                child: Icon(
+                  Platform.isIOS ? Icons.arrow_back_ios_new : Icons.arrow_back,
+                  color: Colors.white,
+                  size: 40.0,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
+class VideoPlayerWidget extends StatefulWidget {
+  final String videoUrl;
+
+  const VideoPlayerWidget({Key? key, required this.videoUrl}) : super(key: key);
+
+  @override
+  _VideoPlayerWidgetState createState() => _VideoPlayerWidgetState();
+}
+
+class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   late VideoPlayerController _controller;
   late Future<void> _initializeVideoPlayerFuture;
 
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.network(widget.url);
+    _controller = VideoPlayerController.network(widget.videoUrl);
     _initializeVideoPlayerFuture = _controller.initialize();
-    _controller.setLooping(true);
   }
 
   @override
@@ -421,10 +653,32 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         if (snapshot.connectionState == ConnectionState.done) {
           return AspectRatio(
             aspectRatio: _controller.value.aspectRatio,
-            child: VideoPlayer(_controller),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                VideoPlayer(_controller),
+                IconButton(
+                  icon: Icon(
+                    _controller.value.isPlaying
+                        ? Icons.pause
+                        : Icons.play_arrow,
+                    color: Colors.white,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      if (_controller.value.isPlaying) {
+                        _controller.pause();
+                      } else {
+                        _controller.play();
+                      }
+                    });
+                  },
+                ),
+              ],
+            ),
           );
         } else {
-          return const Center(child: CircularProgressIndicator());
+          return Center(child: const CircularProgressIndicator());
         }
       },
     );

@@ -42,6 +42,13 @@ dependencies:
   path_provider: ^2.1.3
   path: ^1.9.0
   saver_gallery: ^3.0.5
+  external_path: ^1.0.3
+  android_intent_plus: ^5.0.2
+  permission_handler: ^11.3.1
+  device_info_plus: ^10.1.0
+  dio: ^5.5.0+1
+  photo_manager: ^3.2.0
+  flutter_local_notifications: ^17.2.2
 
 dev_dependencies:
   flutter_test:

@@ -4,12 +4,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'Auth/LoginScreen.dart';
 import 'Admin/DashboardAdmin.dart';
 import 'Users/Dashboard.dart';
-import 'dart:io' show Platform;
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
-  // SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  // Menampilkan status bar dan navigation bar secara default
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+  // (Opsional) Mengunci orientasi ke portrait jika diperlukan
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   runApp(MyApp());
 }
 
