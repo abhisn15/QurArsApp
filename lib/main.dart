@@ -6,9 +6,9 @@ import 'Admin/DashboardAdmin.dart';
 import 'Users/Dashboard.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
   // Menampilkan status bar dan navigation bar secara default
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
 
   // (Opsional) Mengunci orientasi ke portrait jika diperlukan
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
@@ -52,12 +52,12 @@ class _SplashScreenState extends State<SplashScreen> {
         _createRoute(LoginScreen()),
         (Route<dynamic> route) => false,
       );
-    } else if (role == 0) {
+    } else if (role == 'Admin') {
       Navigator.of(context).pushAndRemoveUntil(
         _createRoute(DashboardAdmin()),
         (Route<dynamic> route) => false,
       );
-    } else if (role == 1) {
+    } else if (role == 'Client') {
       Navigator.of(context).pushAndRemoveUntil(
         _createRoute(Dashboard()),
         (Route<dynamic> route) => false,

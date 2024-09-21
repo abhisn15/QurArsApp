@@ -38,6 +38,7 @@ class _DashboardState extends State<Dashboard> {
   void initState() {
     super.initState();
     _initializeNotifications();
+    requestPermissions(context);
   }
 
   Future<void> _initializeNotifications() async {
@@ -67,7 +68,8 @@ class _DashboardState extends State<Dashboard> {
   Future<void> requestPermissions(BuildContext context) async {
     if (Platform.isAndroid) {
       // Request storage permission
-      PermissionStatus storagePermission = await Permission.storage.request();
+      PermissionStatus storagePermission =
+          await Permission.manageExternalStorage.request();
 
       if (storagePermission.isGranted) {
         print('Storage permission granted');
@@ -235,15 +237,15 @@ class _DashboardState extends State<Dashboard> {
         if (response.statusCode == 200) {
           final fileName = Uri.parse(url).pathSegments.last.split('?').first;
           final directory = await getApplicationDocumentsDirectory();
-          print('Downloading from: $url');
+          // print('Downloading from: $url');
           final file = File('${directory.path}/$fileName');
 
           // Show download notification with initial progress
           await showDownloadNotification(fileName, 0);
 
           await file.writeAsBytes(response.bodyBytes);
-          print('Downloaded: $fileName');
-          print('Saving file to: ${file.path}');
+          // print('Downloaded: $fileName');
+          // print('Saving file to: ${file.path}');
 
           if (type == 'image') {
             // Save image to gallery
@@ -272,8 +274,8 @@ class _DashboardState extends State<Dashboard> {
       // Ensure the file exists
       if (await videoFile.exists()) {
         // Save video to gallery using PhotoManager
-        final AssetEntity? result =
-            await PhotoManager.editor.saveVideo(videoFile);
+        final AssetEntity? result = await PhotoManager.editor
+            .saveVideo(videoFile, title: 'qurban_arsip.mp4');
       } else {
         print("Video file does not exist.");
       }
@@ -301,7 +303,7 @@ class _DashboardState extends State<Dashboard> {
               children: [
                 Text(
                   "Assalamualaikum Wr Wb.\n"
-                  "Yth. Mohammad Marzuqi Bin Ismail.\n\n"
+                  "Yth. Alvaro Sekeluarga.\n\n"
                   "Alhamdulillah Pemotongan Hewan Qurban Tuan/Puan/Saudara-i Tahun 1445 H tepatnya di Pesantren Attaqwa Bekasi, Indonesia telah selesai di laksanakan.\n\n"
                   "Bagi Tuan/Puan/Saudara-i di Singapore dapat menyempurnakan Sunnah sebagaimana sabda Rasulullah SAW\n\n"
                   "“Jika kalian melihat hilal Dzulhijjah, dan diantara kalian ada yang ingin berqurban, maka hendaklah dia menahan (tidak memotong) sebagian rambutnya kukunya” (HR.Muslim)\n\n"
@@ -333,240 +335,232 @@ class _DashboardState extends State<Dashboard> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: AnnotatedRegion(
-        value: const SystemUiOverlayStyle(
-          statusBarColor: Color(0xffffdabe),
-          statusBarIconBrightness: Brightness.dark,
-        ),
-        child: Scaffold(
-          backgroundColor: Colors.white,
-          body: RefreshIndicator(
-            onRefresh: _refresh,
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(
-                  horizontal: 20, vertical: Platform.isIOS ? 60 : 40),
-              child: Column(
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Column(
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: RefreshIndicator(
+          onRefresh: _refresh,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(
+                horizontal: 20, vertical: Platform.isIOS ? 60 : 40),
+            child: Column(
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Column(
+                      children: [
+                        ClipOval(
+                          child: Image.network(
+                            'https://images.unsplash.com/photo-1531891437562-4301cf35b7e4?q=80&w=3164&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+                            width: 50,
+                            height: 50,
+                            alignment: Alignment.centerLeft,
+                            repeat: ImageRepeat.repeat,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(
+                      width: 10,
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.only(top: 5),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          ClipOval(
-                            child: Image.network(
-                              'https://images.unsplash.com/photo-1531891437562-4301cf35b7e4?q=80&w=3164&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-                              width: 50,
-                              height: 50,
-                              alignment: Alignment.centerLeft,
-                              repeat: ImageRepeat.repeat,
+                          Text(
+                            'Welcome',
+                            style: TextStyle(
+                                color: Colors.black,
+                                fontFamily: 'Poppins',
+                                fontSize: 12),
+                          ),
+                          SizedBox(
+                            height: 5,
+                          ),
+                          SizedBox(
+                            width: 120,
+                            child: Text(
+                              'Alvaro Sekeluarga',
+                              style: TextStyle(
+                                  color: Color.fromRGBO(44, 180, 255, 1),
+                                  fontFamily: 'Poppins',
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(
-                        width: 10,
-                      ),
-                      const Padding(
-                        padding: EdgeInsets.only(top: 5),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Welcome',
-                              style: TextStyle(
-                                  color: Colors.black,
-                                  fontFamily: 'Poppins',
-                                  fontSize: 12),
-                            ),
-                            SizedBox(
-                              height: 5,
-                            ),
-                            SizedBox(
-                              width: 140,
-                              child: Text(
-                                'Alvaro Sekeluarga',
-                                style: TextStyle(
-                                    color: Color.fromRGBO(44, 180, 255, 1),
-                                    fontFamily: 'Poppins',
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(
-                        width: 10,
-                      ),
-                      Container(
-                        margin: const EdgeInsets.only(top: 5),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            SizedBox(
-                              width: 140,
-                              height: 35,
-                              child: ElevatedButton(
-                                onPressed: () async {
-                                  await downloadFiles(_mediaUrls);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content: Text('Download complete')),
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.lightBlue,
-                                  shadowColor: Colors.black38,
-                                  elevation: 4,
-                                  shape: const RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.only(
-                                        bottomLeft: Radius.circular(5),
-                                        bottomRight: Radius.circular(30),
-                                        topLeft: Radius.circular(5),
-                                        topRight: Radius.circular(10)),
-                                  ),
-                                ),
-                                child: const Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      'Download All',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontFamily: 'Poppins',
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    )),
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 10,
-                            ),
-                            SizedBox(
-                              width: 140,
-                              height: 35,
-                              child: ElevatedButton(
-                                onPressed: () {},
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                  shadowColor: Colors.black38,
-                                  elevation: 4,
-                                  shape: const RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.only(
-                                        bottomLeft: Radius.circular(5),
-                                        bottomRight: Radius.circular(30),
-                                        topLeft: Radius.circular(5),
-                                        topRight: Radius.circular(10)),
-                                  ),
-                                ),
-                                child: const Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      'Logout',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontFamily: 'Poppins',
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    )),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: SizedBox(
-                      width: 140,
-                      height: 35,
-                      child: ElevatedButton(
-                        onPressed: _showThankYouNote,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          shadowColor: Colors.black38,
-                          elevation: 4,
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.only(
-                                bottomLeft: Radius.circular(5),
-                                bottomRight: Radius.circular(30),
-                                topLeft: Radius.circular(5),
-                                topRight: Radius.circular(10)),
-                          ),
-                        ),
-                        child: const Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              'Thank-you note',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontFamily: 'Poppins',
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )),
-                      ),
                     ),
-                  ),
-                  SizedBox(
-                    height: Platform.isIOS ? 20 : 20,
-                  ),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                    ),
-                    itemCount: _mediaUrls.length,
-                    itemBuilder: (context, index) {
-                      return InkWell(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => MediaDetailScreen(
-                                  mediaUrl: _mediaUrls[index]),
-                            ),
-                          );
-                        },
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: _mediaUrls[index]['type'] == 'image'
-                              ? Image.network(
-                                  _mediaUrls[index]['url']!,
-                                  fit: BoxFit.cover,
-                                  loadingBuilder: (context, child, progress) {
-                                    if (progress == null) return child;
-                                    return const Center(
-                                        child: CircularProgressIndicator());
-                                  },
-                                )
-                              : Stack(
-                                  alignment: Alignment.center,
-                                  children: [
-                                    SizedBox(
-                                      width: double.infinity,
-                                      height: double.infinity,
-                                      child: VideoPlayerWidget(
-                                        videoUrl: _mediaUrls[index]['url']!,
-                                      ),
+                    Container(
+                      margin: const EdgeInsets.only(top: 5),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          SizedBox(
+                            width: 140,
+                            height: 35,
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                await downloadFiles(_mediaUrls);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Download complete')),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.lightBlue,
+                                shadowColor: Colors.black38,
+                                elevation: 4,
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.only(
+                                      bottomLeft: Radius.circular(5),
+                                      bottomRight: Radius.circular(30),
+                                      topLeft: Radius.circular(5),
+                                      topRight: Radius.circular(10)),
+                                ),
+                              ),
+                              child: const Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    'Download All',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontFamily: 'Poppins',
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                    const Icon(Icons.play_circle_outline,
-                                        color: Colors.white, size: 50),
-                                  ],
+                                  )),
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 10,
+                          ),
+                          SizedBox(
+                            width: 140,
+                            height: 35,
+                            child: ElevatedButton(
+                              onPressed: () {},
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                shadowColor: Colors.black38,
+                                elevation: 4,
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.only(
+                                      bottomLeft: Radius.circular(5),
+                                      bottomRight: Radius.circular(30),
+                                      topLeft: Radius.circular(5),
+                                      topRight: Radius.circular(10)),
                                 ),
+                              ),
+                              child: const Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    'Logout',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontFamily: 'Poppins',
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  )),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(
+                  height: 10,
+                ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: SizedBox(
+                    width: 140,
+                    height: 35,
+                    child: ElevatedButton(
+                      onPressed: _showThankYouNote,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        shadowColor: Colors.black38,
+                        elevation: 4,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.only(
+                              bottomLeft: Radius.circular(5),
+                              bottomRight: Radius.circular(30),
+                              topLeft: Radius.circular(5),
+                              topRight: Radius.circular(10)),
                         ),
-                      );
-                    },
+                      ),
+                      child: const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Thank-you note',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontFamily: 'Poppins',
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )),
+                    ),
                   ),
-                ],
-              ),
+                ),
+                SizedBox(
+                  height: Platform.isIOS ? 20 : 20,
+                ),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemCount: _mediaUrls.length,
+                  itemBuilder: (context, index) {
+                    return InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                MediaDetailScreen(mediaUrl: _mediaUrls[index]),
+                          ),
+                        );
+                      },
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: _mediaUrls[index]['type'] == 'image'
+                            ? Image.network(
+                                _mediaUrls[index]['url']!,
+                                fit: BoxFit.cover,
+                                loadingBuilder: (context, child, progress) {
+                                  if (progress == null) return child;
+                                  return const Center(
+                                      child: CircularProgressIndicator());
+                                },
+                              )
+                            : Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                    child: VideoPlayerWidget(
+                                      videoUrl: _mediaUrls[index]['url']!,
+                                    ),
+                                  ),
+                                  const Icon(Icons.play_circle_outline,
+                                      color: Colors.white, size: 50),
+                                ],
+                              ),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         ),
