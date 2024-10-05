@@ -66,18 +66,33 @@ class _DashboardState extends State<Dashboard> {
 
   //Permintaan Izin  Pengguna
   Future<void> requestPermissions(BuildContext context) async {
+    if (Platform.isIOS) {
+      PermissionStatus notificationPermission =
+          await Permission.notification.request();
+
+      if (notificationPermission.isGranted) {
+        //
+      } else if (notificationPermission.isDenied) {
+        await _showPermissionDialog(context, 'Notification Permission');
+      }
+    }
     if (Platform.isAndroid) {
       // Request storage permission
       PermissionStatus storagePermission =
           await Permission.manageExternalStorage.request();
+      PermissionStatus notificationPermission =
+          await Permission.notification.request();
 
-      if (storagePermission.isGranted) {
+      if (storagePermission.isGranted && notificationPermission.isGranted) {
         print('Storage permission granted');
       } else if (await Permission.manageExternalStorage.request().isGranted) {
         print('Manage external storage permission granted');
+      } else if (await Permission.notification.request().isGranted) {
+        print('Notification permission granted');
       } else {
         // Show modal dialog if permission is denied
-        await _showPermissionDialog(context, 'Storage Permission');
+        await _showPermissionDialog(
+            context, 'Storage Permission, and Notification Permission');
       }
     }
   }
@@ -159,8 +174,13 @@ class _DashboardState extends State<Dashboard> {
       maxProgress: 100,
     );
 
-    final NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
+    const DarwinNotificationDetails iOSPlatformChannelSpecifics =
+        DarwinNotificationDetails(
+            threadIdentifier: 'Download notification', presentSound: true);
+
+    final NotificationDetails platformChannelSpecifics = NotificationDetails(
+        android: androidPlatformChannelSpecifics,
+        iOS: iOSPlatformChannelSpecifics);
 
     await flutterLocalNotificationsPlugin.show(
       0,
@@ -181,8 +201,13 @@ class _DashboardState extends State<Dashboard> {
       priority: Priority.high,
     );
 
-    const NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
+    const DarwinNotificationDetails iOSPlatformChannelSpecifics =
+        DarwinNotificationDetails(
+            threadIdentifier: 'Download notification', presentSound: true);
+
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+        android: androidPlatformChannelSpecifics,
+        iOS: iOSPlatformChannelSpecifics);
 
     await flutterLocalNotificationsPlugin.show(
       0,
@@ -341,14 +366,15 @@ class _DashboardState extends State<Dashboard> {
           onRefresh: _refresh,
           child: SingleChildScrollView(
             padding: EdgeInsets.symmetric(
-                horizontal: 20, vertical: Platform.isIOS ? 60 : 40),
+                horizontal: 20, vertical: Platform.isIOS ? 20 : 40),
             child: Column(
               children: [
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         ClipOval(
                           child: Image.network(
@@ -359,41 +385,44 @@ class _DashboardState extends State<Dashboard> {
                             repeat: ImageRepeat.repeat,
                           ),
                         ),
+                        SizedBox(
+                          width: 10,
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.only(top: 5),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Welcome',
+                                style: TextStyle(
+                                    color: Colors.black,
+                                    fontFamily: 'Poppins',
+                                    fontSize: 12),
+                              ),
+                              SizedBox(
+                                height: 5,
+                              ),
+                              SizedBox(
+                                child: Text(
+                                  'Alvaro Sekeluarga',
+                                  style: TextStyle(
+                                      color: Color.fromRGBO(44, 180, 255, 1),
+                                      fontFamily: 'Poppins',
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(
                       width: 10,
                     ),
-                    const Padding(
-                      padding: EdgeInsets.only(top: 5),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Welcome',
-                            style: TextStyle(
-                                color: Colors.black,
-                                fontFamily: 'Poppins',
-                                fontSize: 12),
-                          ),
-                          SizedBox(
-                            height: 5,
-                          ),
-                          SizedBox(
-                            width: 120,
-                            child: Text(
-                              'Alvaro Sekeluarga',
-                              style: TextStyle(
-                                  color: Color.fromRGBO(44, 180, 255, 1),
-                                  fontFamily: 'Poppins',
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                     Container(
+                      alignment: Alignment.centerRight,
                       margin: const EdgeInsets.only(top: 5),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
@@ -405,7 +434,9 @@ class _DashboardState extends State<Dashboard> {
                               onPressed: () async {
                                 await downloadFiles(_mediaUrls);
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Download complete')),
+                                  SnackBar(
+                                      content: Text(
+                                          'Download complete, your download save on galery')),
                                 );
                               },
                               style: ElevatedButton.styleFrom(
